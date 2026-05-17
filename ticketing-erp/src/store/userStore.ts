@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { User, CreateUserPayload, UpdateUserPayload } from '../types'
-import * as backend from '../lib/mockBackend'
+import * as api from '../lib/api'
 
 interface UserState {
   users: User[]
@@ -13,7 +13,7 @@ interface UserState {
   clearError: () => void
 }
 
-export const useUserStore = create<UserState>((set, get) => ({
+export const useUserStore = create<UserState>((set) => ({
   users: [],
   isLoading: false,
   error: null,
@@ -21,7 +21,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   fetchUsers: async () => {
     set({ isLoading: true, error: null })
     try {
-      const users = await backend.getUsers()
+      const users = await api.getUsers()
       set({ users, isLoading: false })
     } catch (err: any) {
       set({ error: err.message, isLoading: false })
@@ -29,19 +29,19 @@ export const useUserStore = create<UserState>((set, get) => ({
   },
 
   createUser: async (payload) => {
-    const user = await backend.createUser(payload)
+    const user = await api.createUser(payload)
     set(s => ({ users: [...s.users, user] }))
     return user
   },
 
   updateUser: async (id, payload) => {
-    const user = await backend.updateUser(id, payload)
+    const user = await api.updateUser(id, payload)
     set(s => ({ users: s.users.map(u => u.id === id ? user : u) }))
     return user
   },
 
   resetPassword: async (userId, newPassword) => {
-    await backend.resetPassword(userId, newPassword)
+    await api.resetPassword(userId, newPassword)
   },
 
   clearError: () => set({ error: null }),

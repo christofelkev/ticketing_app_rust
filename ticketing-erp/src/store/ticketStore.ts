@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import type { Ticket, TicketDetail, TicketFilter, PaginatedResult, CreateTicketPayload, DashboardStats } from '../types'
-import { useAuthStore } from './authStore'
-import * as backend from '../lib/mockBackend'
+import * as api from '../lib/api'
 
 interface TicketState {
   tickets: Ticket[]
@@ -40,11 +39,9 @@ export const useTicketStore = create<TicketState>((set, get) => ({
   error: null,
 
   fetchTickets: async (page = 1) => {
-    const user = useAuthStore.getState().user
-    if (!user) return
     set({ isLoading: true, error: null })
     try {
-      const result: PaginatedResult<Ticket> = await backend.getTickets(get().filters, page, get().limit, user)
+      const result: PaginatedResult<Ticket> = await api.getTickets(get().filters, page, get().limit)
       set({ tickets: result.data, total: result.total, page, isLoading: false })
     } catch (err: any) {
       set({ error: err.message, isLoading: false })
@@ -54,7 +51,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
   fetchTicket: async (id) => {
     set({ isLoadingDetail: true, error: null, currentTicket: null })
     try {
-      const ticket = await backend.getTicket(id)
+      const ticket = await api.getTicket(id)
       set({ currentTicket: ticket, isLoadingDetail: false })
     } catch (err: any) {
       set({ error: err.message, isLoadingDetail: false })
@@ -62,17 +59,13 @@ export const useTicketStore = create<TicketState>((set, get) => ({
   },
 
   createTicket: async (payload) => {
-    const user = useAuthStore.getState().user
-    if (!user) throw new Error('Not authenticated')
-    const ticket = await backend.createTicket(payload, user)
+    const ticket = await api.createTicket(payload)
     await get().fetchTickets()
     return ticket
   },
 
   updateStatus: async (id, status, comment) => {
-    const user = useAuthStore.getState().user
-    if (!user) throw new Error('Not authenticated')
-    const updated = await backend.updateTicketStatus(id, status, user, comment)
+    const updated = await api.updateTicketStatus(id, status, comment)
     set(state => ({
       tickets: state.tickets.map(t => t.id === id ? { ...t, ...updated } : t),
       currentTicket: state.currentTicket?.id === id
@@ -82,9 +75,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
   },
 
   assignTicket: async (id, assigneeId) => {
-    const user = useAuthStore.getState().user
-    if (!user) throw new Error('Not authenticated')
-    const updated = await backend.assignTicket(id, assigneeId, user)
+    const updated = await api.assignTicket(id, assigneeId)
     set(state => ({
       tickets: state.tickets.map(t => t.id === id ? { ...t, ...updated } : t),
       currentTicket: state.currentTicket?.id === id
@@ -94,9 +85,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
   },
 
   addComment: async (ticketId, content) => {
-    const user = useAuthStore.getState().user
-    if (!user) throw new Error('Not authenticated')
-    const comment = await backend.addComment(ticketId, content, user)
+    const comment = await api.addComment(ticketId, content)
     set(state => {
       if (!state.currentTicket || state.currentTicket.id !== ticketId) return state
       return {
@@ -120,11 +109,9 @@ export const useTicketStore = create<TicketState>((set, get) => ({
   },
 
   fetchDashboard: async () => {
-    const user = useAuthStore.getState().user
-    if (!user) return
     set({ isLoading: true })
     try {
-      const stats = await backend.getDashboardStats(user)
+      const stats = await api.getDashboardStats()
       set({ dashboardStats: stats, isLoading: false })
     } catch {
       set({ isLoading: false })

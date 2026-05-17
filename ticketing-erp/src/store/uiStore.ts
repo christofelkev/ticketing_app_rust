@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import type { Notification, User } from '../types'
-import * as backend from '../lib/mockBackend'
+import type { Notification } from '../types'
+import * as api from '../lib/api'
 
 interface Toast {
   id: string
@@ -35,27 +35,33 @@ export const useUIStore = create<UIState>((set, get) => ({
   setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
 
   fetchNotifications: async (userId) => {
-    const notifs = await backend.getNotifications(userId)
-    set({
-      notifications: notifs,
-      notifUnreadCount: notifs.filter(n => !n.is_read).length,
-    })
+    try {
+      const notifs = await api.getNotifications(userId)
+      set({
+        notifications: notifs,
+        notifUnreadCount: notifs.filter(n => !n.is_read).length,
+      })
+    } catch {}
   },
 
   markNotifRead: async (id) => {
-    await backend.markNotificationRead(id)
-    set(s => ({
-      notifications: s.notifications.map(n => n.id === id ? { ...n, is_read: true } : n),
-      notifUnreadCount: Math.max(0, s.notifUnreadCount - 1),
-    }))
+    try {
+      await api.markNotificationRead(id)
+      set(s => ({
+        notifications: s.notifications.map(n => n.id === id ? { ...n, is_read: true } : n),
+        notifUnreadCount: Math.max(0, s.notifUnreadCount - 1),
+      }))
+    } catch {}
   },
 
   markAllNotifRead: async (userId) => {
-    await backend.markAllNotificationsRead(userId)
-    set(s => ({
-      notifications: s.notifications.map(n => ({ ...n, is_read: true })),
-      notifUnreadCount: 0,
-    }))
+    try {
+      await api.markAllNotificationsRead(userId)
+      set(s => ({
+        notifications: s.notifications.map(n => ({ ...n, is_read: true })),
+        notifUnreadCount: 0,
+      }))
+    } catch {}
   },
 
   addToast: (type, message) => {
