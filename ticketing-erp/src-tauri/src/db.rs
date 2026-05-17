@@ -3,7 +3,7 @@
 use rusqlite::{Connection, Result, params};
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use std::path::PathBuf;
 
 pub type DbConnection = Mutex<Connection>;

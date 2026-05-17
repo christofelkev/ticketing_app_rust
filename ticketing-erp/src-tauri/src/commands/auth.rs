@@ -6,7 +6,7 @@ use rusqlite::params;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
-use bcrypt::{verify, hash, DEFAULT_COST};
+use bcrypt::verify;
 use uuid::Uuid;
 
 // In-memory session store: token -> user_id

@@ -6,6 +6,7 @@ mod commands;
 
 use std::sync::Mutex;
 use rusqlite::Connection;
+use tauri::Manager;
 
 pub struct AppState {
     pub db: Mutex<Connection>,

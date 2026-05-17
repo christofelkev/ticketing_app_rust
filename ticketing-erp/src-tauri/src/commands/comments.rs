@@ -1,7 +1,6 @@
 // Comments commands
 
 use crate::models::*;
-use crate::db::get_user_by_id;
 use crate::commands::auth::require_auth;
 use rusqlite::params;
 use chrono::Utc;
