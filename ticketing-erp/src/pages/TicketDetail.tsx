@@ -11,7 +11,7 @@ import { StatusBadge, PriorityBadge, CategoryBadge, OverdueBadge, Avatar } from 
 import { STATUS_TRANSITIONS, CATEGORY_CONFIG } from '../lib/constants'
 import { formatDateTime, formatRelativeTime } from '../lib/utils'
 import type { Status } from '../types'
-import * as backend from '../lib/mockBackend'
+import * as api from '../lib/api'
 
 export const TicketDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -32,8 +32,7 @@ export const TicketDetail: React.FC = () => {
 
   useEffect(() => {
     if (currentTicket) {
-      const staff = backend.getStaffByDepartment(currentTicket.category)
-      setStaffList(staff)
+      api.getStaffByDepartment(currentTicket.category).then(setStaffList).catch(() => {})
     }
   }, [currentTicket?.category])
 

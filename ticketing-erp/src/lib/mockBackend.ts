@@ -1,3 +1,11 @@
+/**
+ * mockBackend.ts — In-memory mock backend
+ *
+ * Digunakan saat berjalan di browser (npm run dev).
+ * Semua fungsi sekarang menggunakan internal session store.
+ * Token dikelola di api.ts dan di-pass via getToken().
+ */
+
 import type {
   User, Ticket, TicketDetail, Comment, ActivityLog, Notification, DashboardStats,
   AuthSession, CreateTicketPayload, CreateUserPayload, UpdateUserPayload,
@@ -5,11 +13,9 @@ import type {
 } from '../types'
 import { calculateSlaDeadline, generateTicketNo } from './utils'
 
-// ============================================================
-// Mock Database (in-memory)
-// ============================================================
+// ─── Mock Database ─────────────────────────────────────────────────────────
 
-const hashPass = (p: string) => `hashed_${p}` // mock hash
+const hashPass = (p: string) => `hashed_${p}`
 
 let mockUsers: User[] = [
   { id: 1, username: 'admin', full_name: 'Administrator', role: 'admin', department: 'ALL', is_active: true, created_at: '2026-01-01T08:00:00Z' },
@@ -34,25 +40,25 @@ const passwords: Record<number, string> = {
 let mockTickets: TicketDetail[] = [
   {
     id: 1, ticket_no: 'IT-202605-0001', title: 'Laptop tidak bisa connect WiFi di lantai 3',
-    description: 'Sejak kemarin laptop unit Finance tidak bisa terhubung ke WiFi kantor. Sudah coba restart tapi tidak berhasil.',
+    description: 'Sejak kemarin laptop unit Finance tidak bisa terhubung ke WiFi kantor.',
     category: 'IT', priority: 'P1', status: 'IN_PROGRESS',
     requester: mockUsers[6], assignee: mockUsers[3],
     sla_due: new Date(Date.now() - 2 * 3600000).toISOString(),
     created_at: new Date(Date.now() - 6 * 3600000).toISOString(),
     updated_at: new Date(Date.now() - 1 * 3600000).toISOString(),
-    comment_count: 2, is_overdue: true,
+    comment_count: 1, is_overdue: true,
     comments: [
-      { id: 1, ticket_id: 1, user: mockUsers[3], content: 'Sudah cek, kemungkinan driver WiFi corrupt. Sedang proses reinstall.', created_at: new Date(Date.now() - 2 * 3600000).toISOString() },
+      { id: 1, ticket_id: 1, user: mockUsers[3], content: 'Sedang proses reinstall driver WiFi.', created_at: new Date(Date.now() - 2 * 3600000).toISOString() },
     ],
     attachments: [],
     activity_log: [
-      { id: 1, ticket_id: 1, user: mockUsers[1], action: 'ASSIGN', new_value: 'Ahmad Fauzi', created_at: new Date(Date.now() - 5 * 3600000).toISOString() },
+      { id: 1, ticket_id: 1, user: mockUsers[1], action: 'ASSIGN', old_value: undefined, new_value: 'Ahmad Fauzi', created_at: new Date(Date.now() - 5 * 3600000).toISOString() },
       { id: 2, ticket_id: 1, user: mockUsers[3], action: 'STATUS_CHANGE', old_value: 'OPEN', new_value: 'IN_PROGRESS', created_at: new Date(Date.now() - 4 * 3600000).toISOString() },
     ],
   },
   {
     id: 2, ticket_no: 'MNT-202605-0002', title: 'AC ruang meeting lantai 2 mati total',
-    description: 'AC di ruang meeting Lantai 2 sudah 2 hari tidak berfungsi. Sangat mengganggu rapat.',
+    description: 'AC di ruang meeting Lantai 2 sudah 2 hari tidak berfungsi.',
     category: 'MNT', priority: 'P2', status: 'OPEN',
     requester: mockUsers[5], assignee: undefined,
     sla_due: calculateSlaDeadline('P2', new Date(Date.now() - 4 * 3600000).toISOString()),
@@ -71,13 +77,13 @@ let mockTickets: TicketDetail[] = [
     updated_at: new Date(Date.now() - 5 * 3600000).toISOString(),
     comment_count: 1, is_overdue: false,
     comments: [
-      { id: 2, ticket_id: 3, user: mockUsers[6], content: 'Mohon lampirkan fotokopi KTP dan slip gaji 3 bulan terakhir.', created_at: new Date(Date.now() - 5 * 3600000).toISOString() },
+      { id: 2, ticket_id: 3, user: mockUsers[6], content: 'Mohon lampirkan fotokopi KTP.', created_at: new Date(Date.now() - 5 * 3600000).toISOString() },
     ],
     attachments: [], activity_log: [],
   },
   {
     id: 4, ticket_no: 'PRC-202605-0004', title: 'Pengadaan ATK Q2 2026',
-    description: 'Permohonan pengadaan alat tulis kantor untuk kebutuhan Q2 2026. Estimasi 500rb.',
+    description: 'Permohonan pengadaan alat tulis kantor untuk kebutuhan Q2 2026.',
     category: 'PRC', priority: 'P4', status: 'RESOLVED',
     requester: mockUsers[1], assignee: mockUsers[1],
     sla_due: calculateSlaDeadline('P4', new Date(Date.now() - 72 * 3600000).toISOString()),
@@ -89,7 +95,7 @@ let mockTickets: TicketDetail[] = [
   },
   {
     id: 5, ticket_no: 'IT-202605-0005', title: 'Install software AutoCAD untuk desainer',
-    description: 'Tim desainer membutuhkan AutoCAD 2026 untuk project baru. Mohon instalasi di 3 unit laptop.',
+    description: 'Tim desainer membutuhkan AutoCAD 2026 untuk project baru.',
     category: 'IT', priority: 'P3', status: 'OPEN',
     requester: mockUsers[6], assignee: undefined,
     sla_due: calculateSlaDeadline('P3', new Date(Date.now() - 2 * 3600000).toISOString()),
@@ -100,7 +106,7 @@ let mockTickets: TicketDetail[] = [
   },
   {
     id: 6, ticket_no: 'IT-202605-0006', title: 'Printer kantor tidak bisa print dokumen PDF',
-    description: 'Printer di ruang admin tidak bisa mencetak file PDF. Bisa print Word tapi tidak PDF.',
+    description: 'Printer di ruang admin tidak bisa mencetak file PDF.',
     category: 'IT', priority: 'P2', status: 'CLOSED',
     requester: mockUsers[5], assignee: mockUsers[3],
     sla_due: calculateSlaDeadline('P2', new Date(Date.now() - 48 * 3600000).toISOString()),
@@ -113,7 +119,7 @@ let mockTickets: TicketDetail[] = [
   },
   {
     id: 7, ticket_no: 'MNT-202605-0007', title: 'Kebocoran air di plafon ruang server',
-    description: 'Ditemukan kebocoran air di plafon dekat ruang server. Berpotensi membahayakan perangkat.',
+    description: 'Ditemukan kebocoran air di plafon dekat ruang server.',
     category: 'MNT', priority: 'P1', status: 'IN_PROGRESS',
     requester: mockUsers[3], assignee: mockUsers[4],
     sla_due: new Date(Date.now() - 24 * 3600000).toISOString(),
@@ -144,19 +150,17 @@ let mockNotifications: Notification[] = [
   { id: 3, user_id: 4, ticket_id: 1, ticket_no: 'IT-202605-0001', message: 'Ticket IT-202605-0001 di-assign ke Anda', is_read: true, created_at: new Date(Date.now() - 5 * 3600000).toISOString() },
 ]
 
+// In-memory session: token → user
 let sessionStore: Record<string, User> = {}
 
-// ============================================================
-// Auth Commands
-// ============================================================
+// ─── Auth ──────────────────────────────────────────────────────────────────
 
 export async function login(username: string, password: string): Promise<AuthSession> {
   await delay(300)
   const user = mockUsers.find(u => u.username === username && u.is_active)
   if (!user) throw new Error('Username atau password salah')
-  const expectedHash = hashPass(password)
-  if (passwords[user.id] !== expectedHash) throw new Error('Username atau password salah')
-  const token = `token_${user.id}_${Date.now()}`
+  if (passwords[user.id] !== hashPass(password)) throw new Error('Username atau password salah')
+  const token = `mock_${user.id}_${Date.now()}`
   sessionStore[token] = user
   return { user, token }
 }
@@ -170,34 +174,36 @@ export async function getCurrentUser(token: string): Promise<User | null> {
   return sessionStore[token] ?? null
 }
 
-// ============================================================
-// Ticket Commands
-// ============================================================
+function getActorFromToken(token?: string): User {
+  const t = token || localStorage.getItem('ticketing-token') || ''
+  const u = sessionStore[t]
+  if (!u) throw new Error('Tidak terautentikasi')
+  return u
+}
+
+// ─── Tickets ───────────────────────────────────────────────────────────────
 
 export async function getTickets(
   filter: TicketFilter,
   page: number,
   limit: number,
-  currentUser: User
 ): Promise<PaginatedResult<Ticket>> {
   await delay(200)
-
+  const actor = getActorFromToken()
   let filtered = [...mockTickets] as Ticket[]
 
   // Role-based filtering
-  if (currentUser.role === 'staff') {
-    filtered = filtered.filter(t => t.assignee?.id === currentUser.id)
-  } else if (currentUser.role === 'requester') {
-    filtered = filtered.filter(t => t.requester.id === currentUser.id)
-  } else if (currentUser.role === 'manager') {
-    filtered = filtered.filter(t => t.category === currentUser.department)
+  if (actor.role === 'staff') {
+    filtered = filtered.filter(t => t.assignee?.id === actor.id)
+  } else if (actor.role === 'requester') {
+    filtered = filtered.filter(t => t.requester.id === actor.id)
+  } else if (actor.role === 'manager') {
+    filtered = filtered.filter(t => t.category === actor.department)
   }
 
   if (filter.category) filtered = filtered.filter(t => t.category === filter.category)
   if (filter.status) filtered = filtered.filter(t => t.status === filter.status)
   if (filter.priority) filtered = filtered.filter(t => t.priority === filter.priority)
-  if (filter.assignee_id) filtered = filtered.filter(t => t.assignee?.id === filter.assignee_id)
-  if (filter.requester_id) filtered = filtered.filter(t => t.requester.id === filter.requester_id)
   if (filter.search) {
     const q = filter.search.toLowerCase()
     filtered = filtered.filter(t =>
@@ -207,7 +213,6 @@ export async function getTickets(
     )
   }
 
-  // Sort: overdue first, then by created_at desc
   filtered.sort((a, b) => {
     if (a.is_overdue && !b.is_overdue) return -1
     if (!a.is_overdue && b.is_overdue) return 1
@@ -226,9 +231,9 @@ export async function getTicket(id: number): Promise<TicketDetail> {
   return { ...ticket }
 }
 
-export async function createTicket(payload: CreateTicketPayload, requester: User): Promise<Ticket> {
+export async function createTicket(payload: CreateTicketPayload): Promise<Ticket> {
   await delay(400)
-  const catCount = mockTickets.filter(t => t.category === payload.category).length + 1
+  const actor = getActorFromToken()
   const ticket_no = generateTicketNo(payload.category, ticketCounter++)
   const now = new Date().toISOString()
   const newTicket: TicketDetail = {
@@ -239,7 +244,7 @@ export async function createTicket(payload: CreateTicketPayload, requester: User
     category: payload.category,
     priority: payload.priority,
     status: 'OPEN',
-    requester,
+    requester: actor,
     assignee: undefined,
     sla_due: calculateSlaDeadline(payload.priority),
     desired_due: payload.desired_due,
@@ -250,12 +255,11 @@ export async function createTicket(payload: CreateTicketPayload, requester: User
     comments: [],
     attachments: [],
     activity_log: [
-      { id: Date.now(), ticket_id: mockTickets.length + 1, user: requester, action: 'CREATE', new_value: ticket_no, created_at: now }
+      { id: Date.now(), ticket_id: mockTickets.length + 1, user: actor, action: 'CREATE', old_value: undefined, new_value: ticket_no, created_at: now }
     ],
   }
   mockTickets.unshift(newTicket)
 
-  // Add notification to managers of that dept
   const managers = mockUsers.filter(u => u.role === 'manager' && (u.department === payload.category || u.department === 'ALL'))
   managers.forEach(m => {
     mockNotifications.unshift({
@@ -272,10 +276,9 @@ export async function createTicket(payload: CreateTicketPayload, requester: User
   return newTicket
 }
 
-export async function updateTicketStatus(
-  id: number, status: string, actor: User, comment?: string
-): Promise<Ticket> {
+export async function updateTicketStatus(id: number, status: string, comment?: string): Promise<Ticket> {
   await delay(300)
+  const actor = getActorFromToken()
   const idx = mockTickets.findIndex(t => t.id === id)
   if (idx === -1) throw new Error('Ticket tidak ditemukan')
   const ticket = mockTickets[idx]
@@ -303,8 +306,9 @@ export async function updateTicketStatus(
   return mockTickets[idx]
 }
 
-export async function assignTicket(id: number, assigneeId: number, actor: User): Promise<Ticket> {
+export async function assignTicket(id: number, assigneeId: number): Promise<Ticket> {
   await delay(300)
+  const actor = getActorFromToken()
   const idx = mockTickets.findIndex(t => t.id === id)
   if (idx === -1) throw new Error('Ticket tidak ditemukan')
   const assignee = mockUsers.find(u => u.id === assigneeId)
@@ -317,11 +321,10 @@ export async function assignTicket(id: number, assigneeId: number, actor: User):
     updated_at: now,
     activity_log: [
       ...mockTickets[idx].activity_log,
-      { id: Date.now(), ticket_id: id, user: actor, action: 'ASSIGN', new_value: assignee.full_name, created_at: now },
+      { id: Date.now(), ticket_id: id, user: actor, action: 'ASSIGN', old_value: undefined, new_value: assignee.full_name, created_at: now },
     ],
   }
 
-  // Notification to assignee
   mockNotifications.unshift({
     id: Date.now(),
     user_id: assigneeId,
@@ -335,12 +338,13 @@ export async function assignTicket(id: number, assigneeId: number, actor: User):
   return mockTickets[idx]
 }
 
-export async function addComment(ticketId: number, content: string, user: User): Promise<Comment> {
+export async function addComment(ticketId: number, content: string): Promise<Comment> {
   await delay(200)
+  const actor = getActorFromToken()
   const idx = mockTickets.findIndex(t => t.id === ticketId)
   if (idx === -1) throw new Error('Ticket tidak ditemukan')
   const now = new Date().toISOString()
-  const comment: Comment = { id: Date.now(), ticket_id: ticketId, user, content, created_at: now }
+  const comment: Comment = { id: Date.now(), ticket_id: ticketId, user: actor, content, created_at: now }
   mockTickets[idx] = {
     ...mockTickets[idx],
     comments: [...mockTickets[idx].comments, comment],
@@ -350,9 +354,7 @@ export async function addComment(ticketId: number, content: string, user: User):
   return comment
 }
 
-// ============================================================
-// User Commands
-// ============================================================
+// ─── Users ─────────────────────────────────────────────────────────────────
 
 export async function getUsers(): Promise<User[]> {
   await delay(200)
@@ -393,73 +395,59 @@ export async function resetPassword(userId: number, newPassword: string): Promis
   passwords[userId] = hashPass(newPassword)
 }
 
-// ============================================================
-// Dashboard
-// ============================================================
+// ─── Dashboard ─────────────────────────────────────────────────────────────
 
-export async function getDashboardStats(currentUser: User): Promise<DashboardStats> {
+export async function getDashboardStats(): Promise<DashboardStats> {
   await delay(300)
+  const actor = getActorFromToken()
 
-  let relevantTickets = [...mockTickets]
-  if (currentUser.role === 'manager') {
-    relevantTickets = relevantTickets.filter(t => t.category === currentUser.department)
+  let relevant = [...mockTickets]
+  if (actor.role === 'manager') {
+    relevant = relevant.filter(t => t.category === actor.department)
+  } else if (actor.role === 'staff') {
+    relevant = relevant.filter(t => t.assignee?.id === actor.id)
+  } else if (actor.role === 'requester') {
+    relevant = relevant.filter(t => t.requester.id === actor.id)
   }
 
   const now = new Date()
-  const thisMonth = now.getMonth()
-  const thisYear = now.getFullYear()
-
-  const totalOpen = relevantTickets.filter(t => t.status === 'OPEN').length
-  const totalInProgress = relevantTickets.filter(t => t.status === 'IN_PROGRESS').length
-  const totalOverdue = relevantTickets.filter(t => t.is_overdue && t.status !== 'CLOSED' && t.status !== 'RESOLVED').length
-  const totalResolvedThisMonth = relevantTickets.filter(t => {
-    if (!t.resolved_at) return false
-    const d = new Date(t.resolved_at)
-    return d.getMonth() === thisMonth && d.getFullYear() === thisYear
-  }).length
-
   const byCategory = (['IT', 'MNT', 'HR', 'PRC'] as const).map(cat => ({
     category: cat,
-    count: relevantTickets.filter(t => t.category === cat).length,
+    count: relevant.filter(t => t.category === cat).length,
   }))
 
-  // Weekly trend (last 4 weeks)
   const trend_weekly = Array.from({ length: 4 }, (_, i) => {
     const weekStart = new Date(now)
     weekStart.setDate(now.getDate() - (3 - i) * 7)
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekStart.getDate() + 7)
-    const count = relevantTickets.filter(t => {
+    const count = relevant.filter(t => {
       const d = new Date(t.created_at)
       return d >= weekStart && d < weekEnd
     }).length
     return { week: `W${i + 1}`, count }
   })
 
-  const overdueTickets = relevantTickets
-    .filter(t => t.is_overdue && t.status !== 'CLOSED')
-    .slice(0, 5)
-
-  const topUnresolved = relevantTickets
-    .filter(t => t.status !== 'CLOSED' && t.status !== 'RESOLVED')
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-    .slice(0, 5)
-
   return {
-    total_open: totalOpen,
-    total_in_progress: totalInProgress,
-    total_overdue: totalOverdue,
-    total_resolved_this_month: totalResolvedThisMonth,
+    total_open: relevant.filter(t => t.status === 'OPEN').length,
+    total_in_progress: relevant.filter(t => t.status === 'IN_PROGRESS').length,
+    total_overdue: relevant.filter(t => t.is_overdue && t.status !== 'CLOSED' && t.status !== 'RESOLVED').length,
+    total_resolved_this_month: relevant.filter(t => {
+      if (!t.resolved_at) return false
+      const d = new Date(t.resolved_at)
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    }).length,
     by_category: byCategory,
     trend_weekly,
-    overdue_tickets: overdueTickets,
-    top_unresolved: topUnresolved,
+    overdue_tickets: relevant.filter(t => t.is_overdue && t.status !== 'CLOSED').slice(0, 5),
+    top_unresolved: relevant
+      .filter(t => t.status !== 'CLOSED' && t.status !== 'RESOLVED')
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      .slice(0, 5),
   }
 }
 
-// ============================================================
-// Notifications
-// ============================================================
+// ─── Notifications ─────────────────────────────────────────────────────────
 
 export async function getNotifications(userId: number): Promise<Notification[]> {
   await delay(100)
@@ -477,9 +465,7 @@ export async function markAllNotificationsRead(userId: number): Promise<void> {
   mockNotifications.filter(n => n.user_id === userId).forEach(n => { n.is_read = true })
 }
 
-// ============================================================
-// Helpers
-// ============================================================
+// ─── Helpers ───────────────────────────────────────────────────────────────
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
